@@ -1,6 +1,6 @@
 # Song Popularity Prediction from Audio Features and Metadata
 
-**F20/21DL Data Mining and Machine Learning, Group 5, Heriot-Watt University Dubai**
+**F20DL Data Mining and Machine Learning, Group 5, Heriot-Watt University Dubai**
 
 | Member | Main responsibility |
 |---|---|
