@@ -1,0 +1,44 @@
+F20DL Group 5 - Data preparation log (SpotGenTrack)
+Script: prepare_data.py (seed 42). Rerunning the script writes a short version to data_preparation_log_raw.txt.
+
+1. Joining the files
+We joined the three SpotGenTrack files (tracks, artists, albums) into one table with one row per track. For tracks with more than one artist we used the first listed artist, as this is the main artist. The joined table has 101,939 tracks and no missing values.
+
+2. Removing invalid tracks
+We removed 367 tracks where tempo or time signature is 0. A value of 0 means Spotify's audio analysis failed for that track, so its audio features cannot be trusted. This leaves 101,572 tracks.
+
+3. Unusual values we kept
+Some values look extreme but are real: tracks shorter than 30 seconds (intros, skits), tracks longer than 15 minutes, loudness slightly above 0 dB, very large track and disc numbers on big compilations, and a few release years before 1950 (probably reissue dates). We kept these because removing real data would bias the dataset.
+
+4. Fixing skewed features
+followers and duration_ms are heavily right-skewed: a few artists have millions of followers and a few tracks are very long. We applied log(1 + x) to both. This reduced the skew of followers from 9.5 to -0.20 and of duration from 9.8 to 0.45.
+
+5. Release year
+release_date is recorded at different levels of detail (some full dates, some only a month or a year), so we kept only the year as release_year.
+
+6. Genres
+Genres are stored per artist, and there are 2,371 different labels, which is too many to use directly. We grouped them into 11 broad genres using keyword rules, plus "other" for genres that fit none of the rules and "unknown" for artists with no genre. The shares are:
+unknown 18.4%, other 13.6%, rock 12.4%, latin 12.3%, hip hop/rap 10.3%, pop 7.7%, folk/indie 6.0%, electronic 5.1%, R&B/soul 4.6%, metal 3.5%, classical 3.1%, jazz/blues 1.9%, country 1.0%.
+"other" is a long tail of small genres such as lo-fi, worship, comedy and Brazilian styles.
+
+7. Encoding categories
+key, time_signature, album_type and the broad genre are categories even when stored as numbers (key 11 is not "more" than key 1), so we one-hot encoded them. mode is already 0 or 1 (minor or major), so we kept it as it is.
+We did not scale the features here. Each model fits its scaler on the training data only, so no information from the test set leaks into training.
+
+8. Popularity classes
+For the classification task we split popularity into three classes: Low (0-40), Medium (41-60) and High (61-100).
+
+9. Train, validation and test split
+We split the data 70/15/15, stratified by popularity class, with seed 42.
+Some songs appear more than once, for example as both a single and an album version. 8,833 tracks share a song (same main artist and title) with another version. If different versions ended up in training and testing, the models would be tested on songs they had effectively already seen. To stop this, we split at song level so all versions of a song stay in the same split.
+
+Split sizes: train 71,065 (70.0%), validation 15,237 (15.0%), test 15,270 (15.0%).
+
+Class mix in each split (%):
+            Low     Medium   High
+train       49.90   39.37    10.72
+validation  49.90   39.37    10.72
+test        49.96   39.34    10.70
+
+10. Checks
+No track ID appears in more than one split, no song appears in more than one split, and every track is assigned to a split.
