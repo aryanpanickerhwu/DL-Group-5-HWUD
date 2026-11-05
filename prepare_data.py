@@ -111,12 +111,15 @@ print(mix.to_string())
 note("Checks passed: no ID overlap, no song in more than one split, every track assigned")
 
 # ---------------- 7. Save ------------------------------------------------------------------
+# song_id: integer id per song (same main artist + title). Use it as `groups` in StratifiedGroupKFold
+# so versions of the same song never end up in both a training fold and a validation fold.
+df["song_id"] = pd.factorize(df["song_group"])[0]
 drop = ["name", "album_id", "artist_id", "genres", "release_date", "followers", "duration_ms", "song_group"]
 out = df.drop(columns=drop)
-first = ["id", "split", "popularity", "pop_class"]
+first = ["id", "song_id", "split", "popularity", "pop_class"]
 out = out[first + [c for c in out.columns if c not in first]]
 out.to_csv("spotgentrack_clean.csv", index=False)
-out[["id", "popularity", "pop_class", "split"]].to_csv("split_ids.csv", index=False)
+out[["id", "song_id", "popularity", "pop_class", "split"]].to_csv("split_ids.csv", index=False)
 with open("data_preparation_log_raw.txt", "w") as f:
     f.write("\n".join(log) + "\n\nClass mix per split (%):\n" + mix.to_string() + "\n")
 print(f"\nSaved spotgentrack_clean.csv ({out.shape[0]:,} rows x {out.shape[1]} cols), split_ids.csv, data_preparation_log_raw.txt")

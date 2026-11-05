@@ -42,3 +42,6 @@ test        49.96   39.34    10.70
 
 10. Checks
 No track ID appears in more than one split, no song appears in more than one split, and every track is assigned to a split.
+
+11. Song ID for cross-validation (added 5 Nov)
+The song-level split keeps versions of the same song out of different splits, but 6,121 training tracks (8.6%) still share a song with another training track. A normal k-fold split inside the training set could put two versions of the same song in a training fold and a validation fold. We added a song_id column (one number per song) so cross-validation can use StratifiedGroupKFold with song_id as the group. The train/validation/test split did not change.
