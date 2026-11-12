@@ -1,0 +1,5 @@
+artist_popularity
+log_followers
+album_type_album
+album_type_compilation
+album_type_single
