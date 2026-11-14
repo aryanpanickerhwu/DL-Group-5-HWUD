@@ -58,7 +58,7 @@ Dropped: IDs, URLs, names, the index column and `lyrics` (text data is out of sc
 | Contents | MSD track and artist IDs, genre, album cover URL, pre-computed visual feature vectors (2048-dim) |
 | Previous use | Multimodal genre classification, Oramas et al. (2018) [2] |
 
-There is no shared ID, so we matched on artist name + song title (names added from MSD's `unique_tracks.txt`, both sides lowercased, bracketed text, "feat." and punctuation removed). Only **442 tracks** match (303 exact), so MSD-I is only used for an optional experiment. Code: `match_msdi_spotgentrack.py`, output: `msdi_spotgentrack_matches.csv`.
+There is no shared ID, so we matched on artist name + song title (names added from MSD's `unique_tracks.txt`, both sides lowercased, bracketed text, "feat." and punctuation removed). Only **442 tracks** match (303 exact), so MSD-I is only used for an optional experiment. For the experiments we keep the 394 tracks that map to exactly one cleaned SpotGenTrack track (48 matched several versions of the same song, so the right cover could not be assigned). Code: `match_msdi_spotgentrack.py`, output: `msdi_spotgentrack_matches.csv`.
 
 ## 3. Data preparation (done)
 
@@ -92,7 +92,7 @@ Notebook: `02_r2_eda_sahil.ipynb`. Table: `r2_summary_stats.csv`. Figures: `fig1
 |---|---|
 | **Must (MVP)** | **Classical models (R3):** Decision Tree, k-NN, Naïve Bayes, linear models (linear regression with L2 regularisation for regression, logistic regression for classification) and Random Forest. Compare with baselines that predict the training mean (regression) or the majority class (classification). **Neural network (R4):** an MLP (Keras, as in tutorial P6.1), compared with the best classical model. |
 | **Should** | Feature selection: a filter method (correlation ranking) and a wrapper method (forward selection). Compare audio only, metadata only and both. Train with and without the artist features. Optional k-means clustering to find groups of similar tracks. |
-| **Could** | Add MSD-I cover features for the 442 matched tracks. |
+| **Could** | Add MSD-I cover features for the 442 matched tracks. Done for 394 tracks, see section 7.|
 | **Won't** | Lyrics or other text data, generative models. |
 
 **Evaluation**
@@ -100,6 +100,7 @@ Notebook: `02_r2_eda_sahil.ipynb`. Table: `r2_summary_stats.csv`. Figures: `fig1
 - Regression: MSE, RMSE, MAE, R².
 - Classification: accuracy, precision, recall and F-measure per class, confusion matrix.
 - Every model is tested once on the same test tracks.
+- - R4 (Keras MLP): hyperparameters tuned with 10-fold StratifiedGroupKFold (groups = song_id) in a manual loop over 6 random settings, early stopping on the validation set. Each version tested once.
 
 ## 6. Work plan
 
@@ -110,11 +111,31 @@ Notebook: `02_r2_eda_sahil.ipynb`. Table: `r2_summary_stats.csv`. Figures: `fig1
 | Scatter plots, log plot, feature selection | Sahil | 6 Nov |
 | Shared evaluation code + baselines | Raees | 29 Oct |
 | Classical models tuned (DT, k-NN, NB, linear, RF) | Abhinav, Raees | 6 Nov |
-| MLP built and tuned | Suha | 11 Nov |
+| MLP built and tuned | Suha | ✅ 14 Nov |
+| Cover experiments (precomputed features + CNN) | Suha | ✅ 14 Nov |
 | All report sections drafted | All | 13 Nov |
 | Full report draft | All | 18 Nov |
 | Final checks (figures, references, repo runs) | All | 20 Nov |
 | Submit | All | 23 Nov |
+
+## 7. R4 results (neural networks)
+
+Code, results and plots: `r4_neural_networks/` (see its README).
+
+**MLP (Keras).** Tuned with 10-fold StratifiedGroupKFold on the train set (groups = song_id), 6 random settings per version, early stopping on the validation set. Each version was tested once on the shared test set. "Artist features" = `artist_popularity` and `log_followers`.
+
+| Version | MAE | RMSE | R² |
+|---|---|---|---|
+| Mean baseline | 13.41 | 16.70 | 0.00 |
+| All features (49 columns) | 7.46 | 9.62 | 0.668 |
+| Selected 3 (artist_popularity, log_followers, album_type) | 8.61 | 10.99 | 0.567 |
+| Without artist features (47 columns) | 10.27 | 12.94 | 0.400 |
+
+Artist features carry most of the signal. Audio and metadata alone still beat the baseline clearly. Unlike the macro-F1 feature selection, the regression MLP loses about 0.10 R² when reduced to the 3 selected features.
+
+**Album covers (394 matched tracks).** We tested (a) a Keras MLP on the MSD-I precomputed visual features (PCA to 8, 16 or 32 components) and (b) MobileNetV2 fine-tuned on the raw covers, with and without artist features. Covers gave no reliable improvement. The CNN looked slightly better on the team split (test n = 58, artist overlap between splits) but not in the artist-grouped 5-fold CV. With only 394 tracks, only large effects could be detected.
+
+**Comparison with the classical models (R3):** 
 
 Final deadline: **25 November 2026, 15:30**.
 
@@ -137,15 +158,18 @@ fig1_popularity_hist.png        # popularity distribution
 fig2_correlation.png            # correlation matrix
 match_msdi_spotgentrack.py      # MSD-I to SpotGenTrack matching
 msdi_spotgentrack_matches.csv   # the 442 matched tracks
+r4_neural_networks/             # R4: Keras MLP, cover experiments, results
+plot (own README)             
 ```
 
 ## How to run
 
-1. Install Python 3.10+ and the packages: `pip install pandas numpy scikit-learn matplotlib notebook`
+1. Install Python 3.10+ and the packages: `pip install pandas numpy scikit-learn matplotlib notebook tensorflow pillow`
 2. **Use the prepared data:** load `spotgentrack_clean.csv` and filter by the `split` column, e.g. `train = df[df["split"] == "train"]`. Fit any scaler on the train rows only. Do not re-split.
 3. **Rebuild from scratch:** download the SpotGenTrack CSVs (see below) into the same folder and run `python prepare_data.py`.
 4. **EDA:** open `02_r2_eda_sahil.ipynb` with Jupyter (`python -m notebook`) and run all cells.
 5. **MSD-I matching:** put `MSD-I_dataset.tsv` in the same folder and `unique_tracks.txt` in a `msdi-data/` subfolder, then run `python match_msdi_spotgentrack.py`.
+6. **Neural networks (R4):** see `r4_neural_networks/README.md`. Run from the repo root.
 
 ## Getting the data
 
@@ -168,3 +192,7 @@ Claude (Anthropic) was used to help with: pitch slide design and text editing, d
 [3] Martín-Gutiérrez, D. et al. (2019) 'SpotGenTrack Popularity Dataset', Mendeley Data, V1. https://doi.org/10.17632/4m2x4zngny.1
 
 [4] Oramas, S. (2018) 'MSD-I: Million Song Dataset with Images for Multimodal Genre Classification', Zenodo. https://doi.org/10.5281/zenodo.1240485
+
+[5] Chollet, F. et al. (2015) 'Keras'. https://keras.io
+
+[6] Sandler, M., Howard, A., Zhu, M., Zhmoginov, A. and Chen, L.-C. (2018) 'MobileNetV2: inverted residuals and linear bottlenecks', in Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, pp. 4510–4520.
