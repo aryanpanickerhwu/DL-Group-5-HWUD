@@ -1,0 +1,4 @@
+model,MAE,RMSE,R2
+mean_baseline,10.328,12.614,-0.007
+tabular_mlp,10.517,12.979,-0.066
+tabular+cnn,11.158,13.659,-0.180
