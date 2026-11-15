@@ -1,0 +1,6 @@
+model,tuned_on_rows,best_params,tuning_seconds,cv_macroF1,cv_macroF1_std
+Logistic Regression,71065,"{""C"": 10, ""class_weight"": ""balanced""}",27.2,0.614168421092129,0.004481376202781667
+Naive Bayes,71065,"{""var_smoothing"": 0.03}",10.2,0.5975565272151047,0.008849622788205141
+Decision Tree,71065,"{""class_weight"": null, ""max_depth"": 15, ""min_samples_leaf"": 50}",55.8,0.6213148376782114,0.0066124085008042715
+k-NN,20000,"{""n_neighbors"": 5, ""weights"": ""distance""}",8.5,0.5084793310976901,0.011544256361291649
+Random Forest,20000,"{""class_weight"": ""balanced_subsample"", ""max_features"": 0.33, ""min_samples_leaf"": 5}",80.8,0.6461959262996733,0.009136171334237816

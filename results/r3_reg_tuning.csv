@@ -1,0 +1,5 @@
+model,tuned_on_rows,best_params,tuning_seconds,cv_RMSE,cv_RMSE_std
+Ridge,71065,"{""alpha"": 10}",12.4,10.615048583345304,0.10285464443863665
+Decision Tree,71065,"{""max_depth"": 10, ""min_samples_leaf"": 10}",30.0,10.210640759289065,0.10560696517783418
+k-NN,20000,"{""n_neighbors"": 15, ""weights"": ""distance""}",3.6,12.520814475070917,0.10399375636171142
+Random Forest,20000,"{""max_features"": 0.33, ""min_samples_leaf"": 1}",36.6,9.768593601240593,0.06785349589461252

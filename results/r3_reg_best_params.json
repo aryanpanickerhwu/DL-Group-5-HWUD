@@ -1,0 +1,17 @@
+{
+  "Ridge": {
+    "alpha": 10
+  },
+  "Decision Tree": {
+    "max_depth": 10,
+    "min_samples_leaf": 10
+  },
+  "k-NN": {
+    "n_neighbors": 15,
+    "weights": "distance"
+  },
+  "Random Forest": {
+    "max_features": 0.33,
+    "min_samples_leaf": 1
+  }
+}
