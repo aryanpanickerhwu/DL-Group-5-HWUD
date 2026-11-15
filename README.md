@@ -159,6 +159,11 @@ fig2_correlation.png            # correlation matrix
 match_msdi_spotgentrack.py      # MSD-I to SpotGenTrack matching
 msdi_spotgentrack_matches.csv   # the 442 matched tracks
 r4_neural_networks/             # R4: Keras MLP, cover experiments, results
+r3_common.py                    # shared R3 code: grouped CV folds    pipelines, metrics, final_test()
+03_r3_regression.ipynb          # baseline, Ridge, Decision Tree, k-NN, Random Forest (popularity score)
+04_r3_classification.ipynb      # baseline, Logistic, Naive Bayes, Decision Tree, k-NN, Random Forest (pop_class)
+results/                        # tuning, validation and feature-group tables (CSV), best params (JSON), figures
+
 plot (own README)             
 ```
 
@@ -169,7 +174,8 @@ plot (own README)
 3. **Rebuild from scratch:** download the SpotGenTrack CSVs (see below) into the same folder and run `python prepare_data.py`.
 4. **EDA:** open `02_r2_eda_sahil.ipynb` with Jupyter (`python -m notebook`) and run all cells.
 5. **MSD-I matching:** put `MSD-I_dataset.tsv` in the same folder and `unique_tracks.txt` in a `msdi-data/` subfolder, then run `python match_msdi_spotgentrack.py`.
-6. **Neural networks (R4):** see `r4_neural_networks/README.md`. Run from the repo root.
+6. **R3 models:** keep `r3_common.py` and `spotgentrack_clean.csv` in the same folder, then run `03_r3_regression.ipynb` and `04_r3_classification.ipynb` (about 10–15 minutes each on a laptop). Results are written to `results/`. The test set is not used. Each notebook ends with a `RUN_TEST = False` cell, to be switched on once at the end of the project.
+7. **Neural networks (R4):** see `r4_neural_networks/README.md`. Run from the repo root.
 
 ## Getting the data
 

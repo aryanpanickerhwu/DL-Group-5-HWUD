@@ -1,0 +1,23 @@
+{
+  "Logistic Regression": {
+    "C": 10,
+    "class_weight": "balanced"
+  },
+  "Naive Bayes": {
+    "var_smoothing": 0.03
+  },
+  "Decision Tree": {
+    "class_weight": null,
+    "max_depth": 15,
+    "min_samples_leaf": 50
+  },
+  "k-NN": {
+    "n_neighbors": 5,
+    "weights": "distance"
+  },
+  "Random Forest": {
+    "class_weight": "balanced_subsample",
+    "max_features": 0.33,
+    "min_samples_leaf": 5
+  }
+}
