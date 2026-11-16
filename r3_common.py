@@ -1,18 +1,10 @@
 """
-F20DL Group 5 - shared code for R3 (classical models).
+R3 (classical models).
 
-Used by 03_r3_regression.ipynb and 04_r3_classification.ipynb so every model
-is trained, tuned and scored in exactly the same way.
-
-Rules this file enforces:
-  * Uses the shared split in spotgentrack_clean.csv - never re-splits.
-  * Cross-validation is StratifiedGroupKFold (10 folds), grouped by song_id so
-    two versions of the same song never sit in a training fold and a validation
-    fold at the same time. Folds are stratified by pop_class in BOTH tasks.
-  * Scaling happens inside a Pipeline, so the scaler is re-fitted on the
-    training part of every fold (no leakage from the held-out fold).
-  * The test set is only touched by final_test(), which should be run once,
-    at the very end, after the MLP (R4) is finished too.
+- We use the split alredy in spotgentrack_clean.csv and never re-split.
+- CV is 10 fold StratifiedGroupKFold. It is grouped by song_id so that two version of the same song doesnt end up in both training and validation fold, and stratified by pop_class in both tasks.
+- Scaler is contained within the Pipeline, and therefore, it is fitted using only the training portion of each fold and not the holdout fold.
+- The test set will be used in final_test() only. It will run once at the end when MLP (R4) is done.
 """
 import json
 import time
@@ -40,6 +32,7 @@ ARTIST_BASE = ["artist_popularity", "log_followers"]          # + genre_broad_* 
 
 
 def load_data(path=DATA_FILE):
+    
     """Return the full cleaned table and the three splits."""
     df = pd.read_csv(path)
     train = df[df["split"] == "train"].reset_index(drop=True)
@@ -50,12 +43,12 @@ def load_data(path=DATA_FILE):
 
 def feature_groups(df):
     """
-    Feature sets used in the comparison (README section 5, 'Should'):
-      all        - every candidate feature
-      audio      - the 12 audio descriptors (key and time_signature are one-hot)
-      metadata   - everything that is not audio (track, artist, album)
-      no_artist  - all features except the artist group
-                   (artist_popularity, log_followers, broad genre)
+     Feature sets we compare (README section 5):
+      all       - every feature
+      audio     - the 12 audio features (key and time_signature)
+      metadata  - everything that is not audio (track, artist, album)
+      no_artist - everything except artist_popularity, log_followers and genre
+
     """
     feats = [c for c in df.columns if c not in NON_FEATURES]
     audio = AUDIO_BASE + [c for c in feats if c.startswith(("key_", "time_signature_"))]
@@ -70,10 +63,8 @@ def feature_groups(df):
 # ---------------------------------------------------------------------------
 def grouped_folds(data, n_folds=N_FOLDS, seed=SEED):
     """
-    Pre-computed (train_idx, test_idx) pairs for GridSearchCV.
-    Stratified by pop_class, grouped by song_id. Pre-computing the folds lets the
-    regression task use the same stratified, grouped folds (StratifiedGroupKFold
-    cannot stratify on a continuous target directly).
+    Create the (train_idx, test_idx) splits upfront, stratified on pop_class, and grouped by song_id. StratifiedGroupKFold cannot stratify on a continuous target, so this approach will allow regression to use the classification folds.
+
     """
     cv = StratifiedGroupKFold(n_splits=n_folds, shuffle=True, random_state=seed)
     return list(cv.split(data, data["pop_class"], groups=data["song_id"]))
@@ -81,9 +72,10 @@ def grouped_folds(data, n_folds=N_FOLDS, seed=SEED):
 
 def tuning_subsample(train, n_rows, seed=SEED):
     """
-    Stratified random subsample of the training set, used to tune the slow
-    models (k-NN, Random Forest). The chosen settings are then re-fitted on the
-    FULL training set. CV on the subsample is still grouped by song_id.
+    A smaller stratified sample of train data is used for tuning slow models (k-NN, RF).
+    The optimal values are refitted on the whole training dataset.
+    Returns the whole dataset if n_rows is None.
+
     """
     if n_rows is None or n_rows >= len(train):
         return train
@@ -93,16 +85,17 @@ def tuning_subsample(train, n_rows, seed=SEED):
 
 
 def make_pipeline(model, scale=True):
-    """Scaler (fitted inside each fold) + model."""
+
+    """Scaler + model. Set scale=false for models that doesnt need it (eg. trees)"""
     steps = [("scaler", StandardScaler())] if scale else []
     return Pipeline(steps + [("model", model)])
 
 
 def tune(name, pipeline, grid, train, features, target, scoring, subsample=None):
     """
-    Grid search with grouped stratified 10-fold CV.
-    Returns the fitted GridSearchCV object (best model refitted on the data it
-    was tuned on) plus a one-row summary.
+    Grid search using the grouped 10-fold CV above.
+    it returns the fitted GridSearchCV and a summary dict (best params, cv mean, cv std, time).
+
     """
     data = tuning_subsample(train, subsample)
     folds = grouped_folds(data)
@@ -124,7 +117,8 @@ def tune(name, pipeline, grid, train, features, target, scoring, subsample=None)
 
 
 def refit_full(gs, train, features, target):
-    """Refit the best pipeline from a grid search on the full training set."""
+
+    """Take the best pipeline from tune() and fit it on the full training set."""
     from sklearn.base import clone
     model = clone(gs.best_estimator_)
     if "model__n_jobs" in model.get_params():      # models were tuned single-threaded
@@ -137,6 +131,7 @@ def refit_full(gs, train, features, target):
 # Metrics
 # ---------------------------------------------------------------------------
 def regression_metrics(y_true, y_pred):
+    """ MSE, RMSE, MSE AND R2 """
     mse = mean_squared_error(y_true, y_pred)
     return {"MSE": mse, "RMSE": np.sqrt(mse),
             "MAE": mean_absolute_error(y_true, y_pred), "R2": r2_score(y_true, y_pred)}
@@ -156,7 +151,12 @@ def classification_metrics(y_true, y_pred):
 
 
 def high_popularity_error(y_true, y_pred, threshold=60):
-    """MAE on the rare highly popular tracks (popularity > threshold) vs the rest."""
+
+    """
+    MAE on the rare very popular tracks (popularity > threshold) compared to
+    the rest, to check if the model struggles with hits.
+    Also returns n_high.
+    """
     y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
     hi = y_true > threshold
     return {"MAE_high": mean_absolute_error(y_true[hi], y_pred[hi]),
@@ -165,6 +165,8 @@ def high_popularity_error(y_true, y_pred, threshold=60):
 
 
 def confusion(y_true, y_pred):
+
+    """ Confusion matrix as a dataframe, rows are true classes and cloumns are the predictions"""
     return pd.DataFrame(confusion_matrix(y_true, y_pred, labels=CLASS_ORDER),
                         index=[f"true {c}" for c in CLASS_ORDER],
                         columns=[f"pred {c}" for c in CLASS_ORDER])
@@ -174,10 +176,11 @@ def confusion(y_true, y_pred):
 # Final test - run ONCE at the end of the project
 # ---------------------------------------------------------------------------
 def final_test(models, train, test, features, target, task):
+
     """
-    models: dict name -> unfitted pipeline with the chosen settings.
-    Fits each on the training set and scores it on the test set.
-    Run this once, after all tuning (including the MLP) is finished.
+    Train the model using the training set and then evaluate it using the testing set.
+    The models variable is a dict of {name: Pipeline object using the optimal settings},
+    Task is "regression" or "classification". This is only done after tuning (MLP included).
     """
     rows = []
     for name, model in models.items():
