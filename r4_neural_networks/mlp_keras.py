@@ -1,6 +1,7 @@
 import json, os, random
 import numpy as np, pandas as pd
 import keras
+import sys
 from keras import layers, regularizers
 from sklearn.model_selection import StratifiedGroupKFold
 from sklearn.preprocessing import StandardScaler
@@ -8,9 +9,9 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 SEED, N_FOLDS = 42, 10
 N_CONFIGS = 6                    # settings tried per version; lower it (e.g. 3) if it is too slow
-RUN_TEST = False               # keep False until the team agrees which version to report
+RUN_TEST = "test" in sys.argv[1:]               # keep False until the team agrees which version to report
 TEST_VERSION = "with_artist"     # only used when RUN_TEST = True
-RUN_VERSIONS = ["selected_3"]    # only the new version; the other two are already finished
+RUN_VERSIONS =  [a for a in sys.argv[1:] if a != "test"] or ["r3_no_artist"] # only the new version; the other two are already finished
 
 # ---------- data ----------
 df = pd.read_csv("spotgentrack_clean.csv")
@@ -28,6 +29,16 @@ SEL = [s.strip() for s in open("selected_features.txt").read().splitlines() if s
 VERSIONS["selected_3"] = [c for c in ALL_FEATURES
                           if c in SEL or any(c.startswith(s + "_") for s in SEL)]
 print("selected_3 columns:", VERSIONS["selected_3"])
+# feature sets as defined by the R3 notebooks          
+import sys; sys.path.insert(0, os.getcwd())
+try:
+    import r3_common as rc
+    R3G = rc.feature_groups(df)
+except ImportError:
+    ...                                                 
+for k in ("no_artist", "audio", "metadata"):
+    VERSIONS["r3_" + k] = [c for c in R3G[k] if c in ALL_FEATURES]
+print({k: len(v) for k, v in VERSIONS.items()})        
 print({k: len(v) for k, v in VERSIONS.items()}, "(earlier file: 49 features with artist)")
 
 train, val, test = (df[df.split == s].reset_index(drop=True) for s in ["train", "val", "test"])
