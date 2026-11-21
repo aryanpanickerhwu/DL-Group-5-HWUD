@@ -1,28 +1,40 @@
 # R4 – Neural networks (MLP and CNN)
 
-## MLP results (Keras)
-Test set, used once per version. Mean baseline: MAE 13.41, RMSE 16.70, R² 0.00.
+All models are in Keras. Protocol: shared song-level split, 10-fold StratifiedGroupKFold on train (groups = song_id), 6 random settings per feature set, early stopping on validation, test set used once per model.
 
-| version | features | MAE | RMSE | R² |
+## Test results
+Regression MLP (baseline: training mean, MAE 13.41, RMSE 16.70, R² 0.00):
+
+| feature set | columns | R² | RMSE | MAE |
 |---|---|---|---|---|
-| all features | 49 columns | 7.46 | 9.62 | 0.668 |
-| selected 3 | artist_popularity, log_followers, album_type (5 columns) | 8.61 | 10.99 | 0.567 |
-| without artist features | 47 columns | 10.27 | 12.94 | 0.400 |
+| all | 49 | 0.668 | 9.62 | 7.46 |
+| metadata (R3) | 23 | 0.658 | 9.76 | 7.59 |
+| selected 3 | 5 | 0.567 | 10.99 | 8.61 |
+| no artist, genre kept | 47 | 0.400 | 12.94 | 10.27 |
+| no artist (R3) | 34 | 0.309 | 13.88 | 11.04 |
+| audio (R3) | 26 | 0.234 | 14.61 | 11.68 |
 
-"Artist features" = `artist_popularity` and `log_followers`.
-Plot: `mlp_pred_vs_actual.png`.
-Result files: `mlp_test_results.json` (all features and without artist), `mlp_test_results_selected_3.json`.
+MLP classifier (Low 0–40, Medium 41–60, High 61–100; baseline: majority class, macro-F1 0.222):
+
+| feature set | macro-F1 | accuracy | High recall |
+|---|---|---|---|
+| all | 0.640 | 0.675 | 0.79 |
+| metadata | 0.640 | 0.678 | 0.78 |
+| no artist (R3) | 0.449 | 0.493 | 0.52 |
+| audio | 0.408 | 0.448 | 0.48 |
+
+Compared with the R3 models on the same test set (all features), the Random Forest is best and the MLP is second on regression and on macro-F1.
 
 ## Scripts (run from the repo root, where spotgentrack_clean.csv is)
-1. `mlp_keras.py` – Keras MLP. 10-fold StratifiedGroupKFold on train (groups = song_id), 6 random settings per version, early stopping on validation. `RUN_VERSIONS` picks which version to run. Keep `RUN_TEST = False` for tuning and validation; set it to `True` once for the final test. The selected-3 version needs `selected_features.txt` from the repo root.
-2. `plot_mlp.py` – predicted vs actual plot (run from inside this folder).
-3. `build_matched_features.py` – links MSD-I tracks to SpotGenTrack ids (442 matches after cleaning; 394 kept, 48 dropped because they matched several versions of the same song). Needs the raw SpotGenTrack and MSD-I files.
-4. `download_covers.py` – downloads the 394 cover images.
-5. `cover_features_keras.py <with_artist|without_artist>` – MLP with and without MSD-I precomputed visual features (3 seeds).
-6. `cnn_covers_keras.py <with_artist|without_artist>` – MobileNetV2 fine-tuned on the raw covers (single seed).
+- `mlp_keras.py <versions> [test]` – regression MLP. Versions: `with_artist`, `without_artist`, `selected_3`, `r3_no_artist`, `r3_audio`, `r3_metadata`. Example: `py r4_neural_networks\mlp_keras.py r3_audio r3_metadata`. Adding the word `test` runs the final test (once). `selected_3` needs `selected_features.txt` in the repo root.
+- `mlp_classifier_keras.py <versions> [test]` – MLP classifier, same protocol, scored on macro-F1. Versions: `all`, `r3_no_artist`, `r3_audio`, `r3_metadata`.
+- `compare_r3.py`, `compare_by_feature_set.py`, `compare_r3_test.py`, `make_report_figures.py`, `plot_mlp.py` – tables and figures; run from inside this folder. They need R3's result files (`results/`).
+- `build_matched_features.py`, `download_covers.py` – match MSD-I to SpotGenTrack (442 matches, 394 used) and download the covers.
+- `cover_features_keras.py <with_artist|without_artist>` – MLP with the MSD-I precomputed visual features.
+- `cnn_covers_keras.py <with_artist|without_artist>` – MobileNetV2 fine-tuned on the raw covers (single run).
 
-## Cover experiments: summary
-On the 394 matched tracks, covers gave no reliable improvement, with or without artist features. The CNN looked slightly better on the team split (test n = 58, artist overlap between splits) but not in the artist-grouped 5-fold CV.
+## Cover experiments
+On the 394 matched tracks, covers gave no reliable improvement, with or without artist features. The CNN looked better on the team split (58 test tracks, shared artists) but not in the artist-grouped CV.
 
 ## Requirements
-tensorflow/keras, scikit-learn, pandas, numpy, pillow, matplotlib.
+Python with tensorflow/keras, scikit-learn, pandas, numpy, pillow, matplotlib.
