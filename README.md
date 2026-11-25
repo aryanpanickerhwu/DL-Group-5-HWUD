@@ -219,7 +219,7 @@ We used Claude (Anthropic) for pitch slide design, README drafting, and checks o
 
 ## References
 
-[1] Martín-Gutiérrez, D., Hernández-Peñaloza, G., Mogollón, V. and Álvarez García, F. (2020) 'A multimodal end-to-end deep learning architecture for music popularity prediction', *IEEE Access*, 8, pp. 39361–39374. https://doi.org/10.1109/ACCESS.2020.2976033
+[1] Martín-Gutiérrez, D., Hernández-Peñaloza, G., Belmonte-Hernández, A., V. and Álvarez García, F. (2020) 'A multimodal end-to-end deep learning architecture for music popularity prediction', *IEEE Access*, 8, pp. 39361–39374. https://doi.org/10.1109/ACCESS.2020.2976033
 
 [2] Oramas, S., Barbieri, F., Nieto, O. and Serra, X. (2018) 'Multimodal deep learning for music genre classification', *Transactions of the International Society for Music Information Retrieval*, 1(1), pp. 4–21. https://doi.org/10.5334/tismir.10
 
