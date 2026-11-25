@@ -106,21 +106,23 @@ Notebook: `02_r2_eda_sahil.ipynb`. Table: `r2_summary_stats.csv`. Figures: `fig1
 
 | Task | Owner | Deadline |
 |---|---|---|
-| Data preparation + shared split | Sahil | ✅ 30 Oct |
-| Summary stats, histogram, correlation matrix | Sahil | ✅ 5 Nov |
+| Data preparation + shared split | Sahil | 30 Oct |
+| Summary stats, histogram, correlation matrix | Sahil | 5 Nov |
 | Scatter plots, log plot, feature selection | Sahil | 6 Nov |
 | Shared evaluation code + baselines | Raees | 29 Oct |
 | Classical models tuned (DT, k-NN, NB, linear, RF) | Abhinav, Raees | 6 Nov |
-| MLP built and tuned | Suha | ✅ 14 Nov |
-| Cover experiments (precomputed features + CNN) | Suha | ✅ 14 Nov |
+| MLP built and tuned | Suha | 14 Nov |
+| Cover experiments (precomputed features + CNN) | Suha | 14 Nov |
 | All report sections drafted | All | 13 Nov |
 | Full report draft | All | 18 Nov |
 | Final checks (figures, references, repo runs) | All | 20 Nov |
-| Submit | All | 23 Nov |
+| Submit report PDF and repository ZIP | All | 26 Nov 2026, 03:59 Dubai (25 Nov, 23:59 UK) |
+
+Upload both files to Canvas group Files and make the complete project available in this repository.
 
 ## 7. R4 results (neural networks)
 
-Code, results and plots: `r4_neural_networks/` (see its README).
+Open [`05_r4_neural_networks.ipynb`](05_r4_neural_networks.ipynb) for the results notebook. The [R4 README](r4_neural_networks/README.md) covers the training scripts, saved results and plots.
 
 **MLP (Keras).** Tuned with 10-fold StratifiedGroupKFold on the train set (groups = song_id), 6 random settings per version, early stopping on the validation set. Each version was tested once on the shared test set. "Artist features" = `artist_popularity` and `log_followers`.
 
@@ -135,12 +137,27 @@ Artist features carry most of the signal. Audio and metadata alone still beat th
 
 **Album covers (394 matched tracks).** We tested (a) a Keras MLP on the MSD-I precomputed visual features (PCA to 8, 16 or 32 components) and (b) MobileNetV2 fine-tuned on the raw covers, with and without artist features. Covers gave no reliable improvement. The CNN looked slightly better on the team split (test n = 58, artist overlap between splits) but not in the artist-grouped 5-fold CV. With only 394 tracks, only large effects could be detected.
 
-**Comparison with the classical models (R3):** 
+**Comparison with the classical models (R3).** Both models used all features and the same held-out test split.
 
-Final deadline: **25 November 2026, 15:30**.
+| Test metric | Random Forest (R3) | MLP (R4) |
+|---|---:|---:|
+| Regression R² | 0.686 | 0.668 |
+| Regression MAE | 7.17 | 7.46 |
+| Classification macro-F1 | 0.678 | 0.640 |
+| High-class recall | 0.568 | 0.790 |
 
-### Pitch feedback
-We did not get specific feedback at the pitch. After the marking rubric and later lectures were released, we made these changes
+Random Forest had the best overall test performance on both tasks. The MLP classifier picked up more High-popularity tracks. See the [regression](r4_neural_networks/final_comparison_test_regression.csv) and [classification](r4_neural_networks/final_comparison_test_classification.csv) result tables.
+
+## Pitch feedback and follow-up
+
+We received no specific feedback at the pitch. After reviewing the rubric and lecture material, we made these changes.
+
+| Area | What we changed |
+|---|---|
+| Prediction tasks | Added three-class popularity classification alongside regression so we could evaluate Naïve Bayes. |
+| Data analysis | Added a correlation matrix and used filter and forward-selection methods to choose features. |
+| Model evaluation | Compared the MLP and classical models on the shared held-out test split. |
+| Reproducibility | Added instructions for preparing the data and running the notebooks. |
 
 ---
 
@@ -158,13 +175,22 @@ fig1_popularity_hist.png        # popularity distribution
 fig2_correlation.png            # correlation matrix
 match_msdi_spotgentrack.py      # MSD-I to SpotGenTrack matching
 msdi_spotgentrack_matches.csv   # the 442 matched tracks
-r4_neural_networks/             # R4: Keras MLP, cover experiments, results
-r3_common.py                    # shared R3 code: grouped CV folds    pipelines, metrics, final_test()
-03_r3_regression.ipynb          # baseline, Ridge, Decision Tree, k-NN, Random Forest (popularity score)
-04_r3_classification.ipynb      # baseline, Logistic, Naive Bayes, Decision Tree, k-NN, Random Forest (pop_class)
-results/                        # tuning, validation and feature-group tables (CSV), best params (JSON), figures
-
-plot (own README)             
+selected_features.txt         # selected feature groups used by the R4 notebook
+r3_common.py                  # shared R3 code for grouped CV, pipelines and metrics
+03_r3_regression.ipynb        # baseline, Ridge, Decision Tree, k-NN and Random Forest
+04_r3_classification.ipynb    # baseline, Logistic Regression, Naive Bayes, Decision Tree, k-NN and Random Forest
+results/                     # R3 tuning, validation, test and feature-group results
+05_r4_neural_networks.ipynb    # R4 results notebook
+r4_neural_networks/
+  README.md                   # R4 commands and evaluation details
+  mlp_keras.py                # regression MLP
+  mlp_classifier_keras.py     # classification MLP
+  build_matched_features.py   # match SpotGenTrack tracks to MSD-I visual features
+  download_covers.py          # download album-cover images
+  cover_features_keras.py     # MLP using precomputed visual features
+  cnn_covers_keras.py         # MobileNetV2 using raw cover images
+  final_comparison_test_regression.csv
+  final_comparison_test_classification.csv
 ```
 
 ## How to run
@@ -175,7 +201,9 @@ plot (own README)
 4. **EDA:** open `02_r2_eda_sahil.ipynb` with Jupyter (`python -m notebook`) and run all cells.
 5. **MSD-I matching:** put `MSD-I_dataset.tsv` in the same folder and `unique_tracks.txt` in a `msdi-data/` subfolder, then run `python match_msdi_spotgentrack.py`.
 6. **R3 models:** keep `r3_common.py` and `spotgentrack_clean.csv` in the same folder, then run `03_r3_regression.ipynb` and `04_r3_classification.ipynb` (about 10–15 minutes each on a laptop). Results are written to `results/`. Each notebook ends with a RUN_TEST cell, switched on once at the end and then test results are in results/r3_reg_TEST.csv and results/r3_cls_TEST.csv (used for Table 1).
-7. **Neural networks (R4):** see `r4_neural_networks/README.md`. Run from the repo root.
+7. **Neural networks (R4):** open `05_r4_neural_networks.ipynb` from the repository root. Leave `RUN_TRAINING = False` to use the saved outputs. For training commands, see the [R4 README](r4_neural_networks/README.md).
+
+**Using the submission ZIP.** If generated inputs were omitted, use the full checkout of the same GitHub version. Keep `spotgentrack_clean.csv` and `split_ids.csv` at the repository root and keep `matched_visual_features.npz` and the saved `mlp_*` and `mlpclf_*` prediction CSVs under `r4_neural_networks/`. The notebook reads these saved files even with training disabled. Follow the dataset download instructions below if running the cover experiment cells that read the original MSD-I data.
 
 ## Getting the data
 
@@ -187,11 +215,11 @@ The raw data files are too large to store in this repository.
 
 ## AI use
 
-Claude (Anthropic) was used to help with: pitch slide design and text editing, drafting and editing this README. All decisions were reviewed by the group.Dataset choice, project direction and final analysis are the group's own.
+We used Claude (Anthropic) for pitch slide design, README drafting, and checks of report figures, numbers and code against the repository. Claude also helped edit the report wording and layout. We used Codex (OpenAI) to verify selected results against the repository, tidy the shared report layout, and update this README. The group chose the datasets, directed the project and interpreted the results.
 
 ## References
 
-[1] Martín-Gutiérrez, D., Hernández-Peñaloza, G., Belmonte-Hernández, A. and Álvarez García, F. (2020) 'A multimodal end-to-end deep learning architecture for music popularity prediction', *IEEE Access*, 8, pp. 39361–39374. https://doi.org/10.1109/ACCESS.2020.2976033
+[1] Martín-Gutiérrez, D., Hernández-Peñaloza, G., Mogollón, V. and Álvarez García, F. (2020) 'A multimodal end-to-end deep learning architecture for music popularity prediction', *IEEE Access*, 8, pp. 39361–39374. https://doi.org/10.1109/ACCESS.2020.2976033
 
 [2] Oramas, S., Barbieri, F., Nieto, O. and Serra, X. (2018) 'Multimodal deep learning for music genre classification', *Transactions of the International Society for Music Information Retrieval*, 1(1), pp. 4–21. https://doi.org/10.5334/tismir.10
 
